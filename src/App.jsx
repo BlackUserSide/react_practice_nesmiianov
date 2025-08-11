@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/accessible-emoji */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.scss';
 
 import usersFromServer from './api/users';
@@ -16,19 +16,42 @@ import categories from './api/categories';
 
 // Commit for RULES
 export const App = () => {
-  console.log(categoriesFromServer);
-  const [data, setData] = useState(productsFromServer)
-  const [userFilter, setUserFilter] = useState(null)
+  const [data, setData] = useState(productsFromServer);
+  const [userFilter, setUserFilter] = useState(null);
+  const [nameFilter, setNameFilter] = useState(null)
   const handlerUserFilter = user => {
-    if(user === null) {
-      setUserFilter(user);
-      return;
-    }
-    const findCategoriesForUser = categories.filter(
-      category => category.ownerId === user.id,
-    );
+    if (user !== null) {
+      const findCategoriesForUser = categories.filter(
+        category => category.ownerId === user,
+      );
 
-  }
+      setData(prev => {
+        return [...prev].reduce((acc, curr) => {
+          if (findCategoriesForUser.find(e => e.id === curr.categoryId)) {
+            acc.push(curr);
+
+            return acc;
+          }
+
+          return acc;
+        }, []);
+      });
+    }
+  };
+
+  const nameHandlerFilter = e => {
+    setNameFilter(e.target.value.trim());
+  };
+
+  useEffect(() => {
+    setData(productsFromServer);
+    if (userFilter) {
+      handlerUserFilter(userFilter);
+    }
+    if(nameFilter) {
+
+    }
+  }, [userFilter, nameFilter]);
   const getInfoForCategory = id => {
     const findCategory = categoriesFromServer.find(
       category => category.id === id,
@@ -64,19 +87,26 @@ export const App = () => {
             <p className="panel-heading">Filters</p>
 
             <p className="panel-tabs has-text-weight-bold">
-              <a data-cy="FilterAllUsers" href="#/">
+              <a
+                data-cy="FilterAllUsers"
+                href="#/"
+                className={`${!userFilter ? 'is-active' : null}`}
+                onClick={() => setUserFilter(null)}
+              >
                 All
               </a>
 
               {usersFromServer.map(e => (
-                <a data-cy="FilterUser" href="#/" key={e.id}>
+                <a
+                  data-cy="FilterUser"
+                  href="#/"
+                  key={e.id}
+                  className={`${e.id === userFilter ? 'is-active' : null}`}
+                  onClick={() => setUserFilter(e.id)}
+                >
                   {e.name}
                 </a>
               ))}
-
-              {/* <a data-cy="FilterUser" href="#/" className="is-active"> */}
-              {/*  User 2 */}
-              {/* </a> */}
             </p>
 
             <div className="panel-block">
@@ -86,21 +116,23 @@ export const App = () => {
                   type="text"
                   className="input"
                   placeholder="Search"
-                  value="qwe"
+                  onChange={nameHandlerFilter}
                 />
 
                 <span className="icon is-left">
                   <i className="fas fa-search" aria-hidden="true" />
                 </span>
 
-                <span className="icon is-right">
-                  {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                  <button
-                    data-cy="ClearButton"
-                    type="button"
-                    className="delete"
-                  />
-                </span>
+                {nameFilter && (
+                  <span className="icon is-right">
+                    {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+                    <button
+                      data-cy="ClearButton"
+                      type="button"
+                      className="delete"
+                    />
+                  </span>
+                )}
               </p>
             </div>
 
@@ -109,6 +141,7 @@ export const App = () => {
                 href="#/"
                 data-cy="AllCategories"
                 className="button is-success mr-6 is-outlined"
+                onClick={() => setUserFilter(null)}
               >
                 All
               </a>
