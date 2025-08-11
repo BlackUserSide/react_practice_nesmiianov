@@ -5,7 +5,6 @@ import './App.scss';
 import usersFromServer from './api/users';
 import categoriesFromServer from './api/categories';
 import productsFromServer from './api/products';
-import categories from './api/categories';
 
 // const products = productsFromServer.map((product) => {
 //   const category = null; // find by product.categoryId
@@ -18,10 +17,26 @@ import categories from './api/categories';
 export const App = () => {
   const [data, setData] = useState(productsFromServer);
   const [userFilter, setUserFilter] = useState(null);
-  const [nameFilter, setNameFilter] = useState(null)
+  const [nameFilter, setNameFilter] = useState('');
+  const [filterCategories, setFilterCategories] = useState([]);
+
+  const filterCategoriesForProducts = () => {
+    setData(prev => {
+      return [...prev].reduce((acc, curr) => {
+        if (filterCategories.includes(curr.categoryId)) {
+          acc.push(curr);
+
+          return acc;
+        }
+
+        return acc;
+      }, []);
+    });
+  };
+
   const handlerUserFilter = user => {
     if (user !== null) {
-      const findCategoriesForUser = categories.filter(
+      const findCategoriesForUser = categoriesFromServer.filter(
         category => category.ownerId === user,
       );
 
@@ -43,15 +58,34 @@ export const App = () => {
     setNameFilter(e.target.value.trim());
   };
 
+  const filteredForName = () => {
+    setData(prev => {
+      return [...prev].filter(filter =>
+        // eslint-disable-next-line
+        filter.name.toLowerCase().includes(nameFilter.trim().toLowerCase()));
+    });
+  };
+
+  const filterCategoriesHandler = id => {
+    setFilterCategories(prev =>
+      // eslint-disable-next-line
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+  };
+
   useEffect(() => {
     setData(productsFromServer);
     if (userFilter) {
       handlerUserFilter(userFilter);
     }
-    if(nameFilter) {
 
+    if (nameFilter !== '') {
+      filteredForName();
     }
-  }, [userFilter, nameFilter]);
+
+    if (filterCategories.length > 0) {
+      filterCategoriesForProducts();
+    }
+  }, [userFilter, nameFilter, filterCategories]);
   const getInfoForCategory = id => {
     const findCategory = categoriesFromServer.find(
       category => category.id === id,
@@ -75,6 +109,12 @@ export const App = () => {
     }
 
     return null;
+  };
+
+  const resetAllFilters = () => {
+    setFilterCategories([]);
+    setNameFilter('');
+    setUserFilter(null);
   };
 
   return (
@@ -116,6 +156,7 @@ export const App = () => {
                   type="text"
                   className="input"
                   placeholder="Search"
+                  value={nameFilter}
                   onChange={nameHandlerFilter}
                 />
 
@@ -130,6 +171,7 @@ export const App = () => {
                       data-cy="ClearButton"
                       type="button"
                       className="delete"
+                      onClick={() => setNameFilter('')}
                     />
                   </span>
                 )}
@@ -141,7 +183,7 @@ export const App = () => {
                 href="#/"
                 data-cy="AllCategories"
                 className="button is-success mr-6 is-outlined"
-                onClick={() => setUserFilter(null)}
+                onClick={() => setFilterCategories([])}
               >
                 All
               </a>
@@ -149,8 +191,10 @@ export const App = () => {
               {categoriesFromServer.map(e => (
                 <a
                   data-cy="Category"
-                  className="button mr-2 my-1 is-info"
+                  className={`button mr-2 my-1 ${filterCategories.includes(e.id) ? 'is-info' : ''}`}
                   href="#/"
+                  key={e.id}
+                  onClick={() => filterCategoriesHandler(e.id)}
                 >
                   {e.title}
                 </a>
@@ -162,6 +206,7 @@ export const App = () => {
                 data-cy="ResetAllButton"
                 href="#/"
                 className="button is-link is-outlined is-fullwidth"
+                onClick={resetAllFilters}
               >
                 Reset all filters
               </a>
@@ -170,84 +215,86 @@ export const App = () => {
         </div>
 
         <div className="box table-container">
-          <p data-cy="NoMatchingMessage">
-            No products matching selected criteria
-          </p>
+          {data.length > 0 ? (
+            <table
+              data-cy="ProductTable"
+              className="table is-striped is-narrow is-fullwidth"
+            >
+              <thead>
+                <tr>
+                  <th>
+                    <span className="is-flex is-flex-wrap-nowrap">
+                      ID
+                      <a href="#/">
+                        <span className="icon">
+                          <i data-cy="SortIcon" className="fas fa-sort" />
+                        </span>
+                      </a>
+                    </span>
+                  </th>
 
-          <table
-            data-cy="ProductTable"
-            className="table is-striped is-narrow is-fullwidth"
-          >
-            <thead>
-              <tr>
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    ID
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort" />
-                      </span>
-                    </a>
-                  </span>
-                </th>
+                  <th>
+                    <span className="is-flex is-flex-wrap-nowrap">
+                      Product
+                      <a href="#/">
+                        <span className="icon">
+                          <i data-cy="SortIcon" className="fas fa-sort-down" />
+                        </span>
+                      </a>
+                    </span>
+                  </th>
 
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    Product
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort-down" />
-                      </span>
-                    </a>
-                  </span>
-                </th>
+                  <th>
+                    <span className="is-flex is-flex-wrap-nowrap">
+                      Category
+                      <a href="#/">
+                        <span className="icon">
+                          <i data-cy="SortIcon" className="fas fa-sort-up" />
+                        </span>
+                      </a>
+                    </span>
+                  </th>
 
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    Category
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort-up" />
-                      </span>
-                    </a>
-                  </span>
-                </th>
-
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    User
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort" />
-                      </span>
-                    </a>
-                  </span>
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {data.map(e => (
-                <tr data-cy="Product">
-                  <td className="has-text-weight-bold" data-cy="ProductId">
-                    {e.id}
-                  </td>
-
-                  <td data-cy="ProductName">{e.name}</td>
-                  <td data-cy="ProductCategory">
-                    {getInfoForCategory(e.categoryId)}
-                  </td>
-
-                  <td
-                    data-cy="ProductUser"
-                    className={`${getInfoForOwner(e.categoryId).sex === 'f' ? 'has-text-danger' : 'has-text-link'}`}
-                  >
-                    {getInfoForOwner(e.categoryId).name}
-                  </td>
+                  <th>
+                    <span className="is-flex is-flex-wrap-nowrap">
+                      User
+                      <a href="#/">
+                        <span className="icon">
+                          <i data-cy="SortIcon" className="fas fa-sort" />
+                        </span>
+                      </a>
+                    </span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {data.map(e => (
+                  <tr data-cy="Product" key={e.id}>
+                    <td className="has-text-weight-bold" data-cy="ProductId">
+                      {e.id}
+                    </td>
+
+                    <td data-cy="ProductName">{e.name}</td>
+                    <td data-cy="ProductCategory">
+                      {getInfoForCategory(e.categoryId)}
+                    </td>
+
+                    <td
+                      data-cy="ProductUser"
+                      className={`${getInfoForOwner(e.categoryId).sex === 'f' ? 'has-text-danger' : 'has-text-link'}`}
+                    >
+                      {getInfoForOwner(e.categoryId).name}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p data-cy="NoMatchingMessage">
+              No products matching selected criteria
+            </p>
+          )}
         </div>
       </div>
     </div>
