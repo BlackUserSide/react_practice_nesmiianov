@@ -13,6 +13,7 @@ import './App.scss';
 //   return null;
 // });
 
+// Commit for RULES
 export const App = () => (
   <div className="section">
     <div className="container">
