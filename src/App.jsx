@@ -1,10 +1,11 @@
 /* eslint-disable jsx-a11y/accessible-emoji */
-import React from 'react';
+import React, { useState } from 'react';
 import './App.scss';
 
 import usersFromServer from './api/users';
 import categoriesFromServer from './api/categories';
 import productsFromServer from './api/products';
+import categories from './api/categories';
 
 // const products = productsFromServer.map((product) => {
 //   const category = null; // find by product.categoryId
@@ -15,7 +16,43 @@ import productsFromServer from './api/products';
 
 // Commit for RULES
 export const App = () => {
-  console.log(productsFromServer);
+  console.log(categoriesFromServer);
+  const [data, setData] = useState(productsFromServer)
+  const [userFilter, setUserFilter] = useState(null)
+  const handlerUserFilter = user => {
+    if(user === null) {
+      setUserFilter(user);
+      return;
+    }
+    const findCategoriesForUser = categories.filter(
+      category => category.ownerId === user.id,
+    );
+
+  }
+  const getInfoForCategory = id => {
+    const findCategory = categoriesFromServer.find(
+      category => category.id === id,
+    );
+
+    if (findCategory) {
+      return `${findCategory.icon} - ${findCategory.title}`;
+    }
+
+    return null;
+  };
+
+  const getInfoForOwner = id => {
+    const findOwnerId = categoriesFromServer.find(
+      category => category.id === id,
+    ).ownerId;
+    const findOwner = usersFromServer.find(e => e.id === findOwnerId);
+
+    if (findOwner) {
+      return findOwner;
+    }
+
+    return null;
+  };
 
   return (
     <div className="section">
@@ -157,45 +194,25 @@ export const App = () => {
             </thead>
 
             <tbody>
-              {d}
-              <tr data-cy="Product">
-                <td className="has-text-weight-bold" data-cy="ProductId">
-                  1
-                </td>
+              {data.map(e => (
+                <tr data-cy="Product">
+                  <td className="has-text-weight-bold" data-cy="ProductId">
+                    {e.id}
+                  </td>
 
-                <td data-cy="ProductName">Milk</td>
-                <td data-cy="ProductCategory">🍺 - Drinks</td>
+                  <td data-cy="ProductName">{e.name}</td>
+                  <td data-cy="ProductCategory">
+                    {getInfoForCategory(e.categoryId)}
+                  </td>
 
-                <td data-cy="ProductUser" className="has-text-link">
-                  Max
-                </td>
-              </tr>
-
-              <tr data-cy="Product">
-                <td className="has-text-weight-bold" data-cy="ProductId">
-                  2
-                </td>
-
-                <td data-cy="ProductName">Bread</td>
-                <td data-cy="ProductCategory">🍞 - Grocery</td>
-
-                <td data-cy="ProductUser" className="has-text-danger">
-                  Anna
-                </td>
-              </tr>
-
-              <tr data-cy="Product">
-                <td className="has-text-weight-bold" data-cy="ProductId">
-                  3
-                </td>
-
-                <td data-cy="ProductName">iPhone</td>
-                <td data-cy="ProductCategory">💻 - Electronics</td>
-
-                <td data-cy="ProductUser" className="has-text-link">
-                  Roma
-                </td>
-              </tr>
+                  <td
+                    data-cy="ProductUser"
+                    className={`${getInfoForOwner(e.categoryId).sex === 'f' ? 'has-text-danger' : 'has-text-link'}`}
+                  >
+                    {getInfoForOwner(e.categoryId).name}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
